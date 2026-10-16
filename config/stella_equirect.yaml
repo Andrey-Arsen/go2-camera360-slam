@@ -1,0 +1,58 @@
+# stella_vslam: 360-панорама Go2 (scripts/equirect.py) — модель Equirectangular, 1920x960.
+# Основа — пример stella_vslam example/aist/equirectangular.yaml (RICOH THETA S 1920x960).
+# Маска (тело робота, верхний полюс) — PNG от scripts/equirect.py, передаётся run_slam --mask;
+# с ней mask_rectangles отсюда не действуют, поэтому их здесь нет.
+
+Camera:
+  name: "Go2 Insta360 sim equirect 1920"
+  setup: "monocular"
+  model: "equirectangular"
+  fps: 10.0          # кадры 10 Гц по времени симуляции (run_go2_isaac.py --image-every 6)
+  cols: 1920
+  rows: 960
+  color_order: "RGB"
+
+Preprocessing:
+  min_size: 800
+
+Feature:
+  name: "default ORB feature extraction setting"
+  scale_factor: 1.2
+  num_levels: 8
+  ini_fast_threshold: 20
+  min_fast_threshold: 7
+
+Mapping:
+  backend: "g2o"
+  baseline_dist_thr_ratio: 0.02
+  redundant_obs_ratio_thr: 0.95
+  num_covisibilities_for_landmark_generation: 20
+  num_covisibilities_for_landmark_fusion: 20
+  residual_deg_thr: 0.4
+
+Tracking:
+  backend: "g2o"
+
+KeyframeInserter:
+  # Ждать, пока картирование обработает новый ключевой кадр (локальная оптимизация), и только потом
+  # отслеживать дальше. Без этого на разворотах на месте ключевые кадры шли каждые 0.1–0.7 с,
+  # трекинг опирался на ещё не уточнённые точки, и в одном прогоне из четырёх масштаб карты
+  # проваливался в разы (16.10.2026). По документации stella — точнее и воспроизводимее.
+  wait_for_local_bundle_adjustment: true
+
+LoopDetector:
+  backend: "g2o"
+  enabled: true
+  reject_by_graph_distance: true
+  min_distance_on_graph: 50
+
+GraphOptimizer:
+  min_num_shared_lms: 200
+
+GlobalOptimizer:
+  thr_neighbor_keyframes: 100
+
+System:
+  map_format: "msgpack"
+  num_grid_cols: 96
+  num_grid_rows: 48
